@@ -1046,7 +1046,7 @@ const jsPsych = initJsPsych({
                 <h2 style="color: #4CAF50;">Overall Accuracy: ${overallAccuracy}%</h2>
                 <p>${totalCorrect} correct out of ${totalQuestions} questions</p>
                 <p style="margin-top: 30px;">Your data has been saved. You may now close this window.</p>
-                <button onclick="window.location.href='https://app.prolific.com/submissions/complete?cc=C556U7OY'" class="jspsych-btn" style="margin-top: 20px; background-color: #4CAF50;">
+                <button onclick="window.location.href='https://app.prolific.com/submissions/complete?cc=CEX630EE'" class="jspsych-btn" style="margin-top: 20px; background-color: #4CAF50;">
                     Complete Study (Return to Prolific)
                 </button>
             </div>
