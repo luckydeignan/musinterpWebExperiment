@@ -731,14 +731,14 @@ function createStoryTrial(story, storyNumber, totalStories, jsPsych) {
         on_load: function() {
             // Start music based on condition
             if (story.musicCondition === 'averaged-music') {
-                const clusterAvgPath = `audio/${story.midiDirName}/cluster_avg.mp3`;
+                const clusterAvgPath = `audio/${story.midiDirName}_cluster_avg.mp3`;
                 playStoryMusic(clusterAvgPath);
             } else if (story.musicCondition === 'cross-faded-clusters') {
                 const firstPartition = story.midiMapping[clusterKeys[0]][0];
                 const firstSentenceId = parseInt(firstPartition.sentence_ids.split(',')[0].trim()) - idOffset;
                 const firstCluster = sentenceToClusterMap.get(firstSentenceId);
                 currentPlayingClusterRef.value = firstCluster;
-                const clusterPath = `audio/${story.midiDirName}/cluster_${firstCluster}.mp3`;
+                const clusterPath = `audio/${story.midiDirName}_cluster_${firstCluster}.mp3`;
                 playStoryMusic(clusterPath);
             }
             
@@ -762,7 +762,7 @@ function createStoryTrial(story, storyNumber, totalStories, jsPsych) {
                                     additionalPartitionIndex = 0;
                                     
                                     if (story.musicCondition === 'regular') {
-                                        const cluster4Path = `audio/${story.midiDirName}/cluster_4.mp3`;
+                                        const cluster4Path = `audio/${story.midiDirName}_cluster_4.mp3`;
                                         playStoryMusic(cluster4Path);
                                     }
                                     
@@ -855,7 +855,7 @@ function updateHighlighting(story, clusterKeys, clusterIndex, partitionIndex, id
     } else if (story.musicCondition === 'cross-faded-clusters') {
         const newCluster = sentenceToClusterMap.get(sentenceIdsToHighlight[0]);
         if (newCluster !== currentPlayingClusterRef.value) {
-            const clusterPath = `audio/${story.midiDirName}/cluster_${newCluster}.mp3`;
+            const clusterPath = `audio/${story.midiDirName}_cluster_${newCluster}.mp3`;
             playStoryMusic(clusterPath);
             currentPlayingClusterRef.value = newCluster;
         }
@@ -865,12 +865,12 @@ function updateHighlighting(story, clusterKeys, clusterIndex, partitionIndex, id
         
         if (story.id === 'starling_five' && clusterKey === '3to4') {
             if (currentPlayingClusterRef.value !== 'starling_cluster3') {
-                const clusterPath = `audio/${story.midiDirName}/cluster_3.mp3`;
+                const clusterPath = `audio/${story.midiDirName}_cluster_3.mp3`;
                 playStoryMusic(clusterPath);
                 currentPlayingClusterRef.value = 'starling_cluster3';
             }
         } else {
-            const mp3Path = `audio/${story.midiDirName}/${clusterKey}_partition${partitionIndex + 1}.mp3`;
+            const mp3Path = `audio/${story.midiDirName}_${clusterKey}_partition${partitionIndex + 1}.mp3`;
             playStoryMusic(mp3Path);
             if (currentPlayingClusterRef.value === 'starling_cluster3') {
                 currentPlayingClusterRef.value = null;

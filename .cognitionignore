@@ -32,3 +32,8 @@ story_questions/
 # Excluded audio files to stay under 100 stimuli limit
 audio/presentation_demo/
 audio/lantern/
+
+# Empty subdirectories (files moved to audio/ root with prefixes)
+audio/carnival/
+audio/starling_five/
+audio/window_blue_curtain/
