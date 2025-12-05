@@ -128,7 +128,7 @@ Stories are loaded from:
 3. **Starling Five** - A space exploration story
 4. **Window Blue Curtain** - A story about isolation and connection
 
-## Troubleshooting
+## Troubleshooting (67)
 
 ### Data won't load
 
