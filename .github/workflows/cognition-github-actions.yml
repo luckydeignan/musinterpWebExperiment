@@ -1,13 +1,32 @@
-on: [push]
-
+on:
+    push:
+      branches:
+        - deploy
+  
 jobs:
-  cognition-deploy:
-    runs-on: ubuntu-latest
-    name: Deploy experiment to Cognition
-    steps:
-      - uses: actions/checkout@v3
-      - uses: javidalpe/cognition-deploy-action@v1.2.0
-        id: deploy
-        with:
-          personal-access-token: ${{secrets.PERSONAL_ACCESS_TOKEN}}
-      - run: echo "The public link to the task is ${{ steps.deploy.outputs.link }}"
+    cognition-deploy:
+      runs-on: ubuntu-latest
+      name: Deploy experiment to Cognition
+      steps:
+        - uses: actions/checkout@v3
+        
+        # Remove files that aren't needed for deployment
+        - name: Clean up unnecessary files
+          run: |
+            rm -rf audio/lantern
+            rm -rf audio/presentation_demo
+            rm -rf scripts
+            rm -rf sentence_to_midi
+            rm -rf raw_texts
+            rm -rf FluidR3_GM
+            rm -rf soundfonts
+            rm -rf .github
+            rm -f server.js soundfont-player.js midi-utils.js start-server.bat package.json
+            find . -name "*.md" -type f -delete
+        
+        - uses: javidalpe/cognition-deploy-action@v1.2.0
+          id: deploy
+          with:
+            personal-access-token: ${{secrets.PERSONAL_ACCESS_TOKEN}}
+        - run: echo "The public link to the task is ${{ steps.deploy.outputs.link }}"
+  
