@@ -1139,7 +1139,7 @@ function downloadDataJSON() {
  */
 function redirectToProlific() {
     // Prolific completion code for this study
-    const completionCode = 'C556U7OY';
+    const completionCode = 'CEX630EE';
     
     // Prolific redirect URL format
     const redirectURL = `https://app.prolific.com/submissions/complete?cc=${completionCode}`;
