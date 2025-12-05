@@ -1,0 +1,20 @@
+{
+  "name": "interp-music-experiment",
+  "version": "1.0.0",
+  "description": "Music interpolation reading experiment with MIDI playback",
+  "scripts": {
+    "convert-soundfont": "node scripts/convert-soundfont.js",
+    "convert-audio": "node scripts/convert-midi-to-mp3.js"
+  },
+  "dependencies": {
+    "tone": "^14.8.49",
+    "@tonejs/midi": "^2.0.28"
+  },
+  "devDependencies": {
+    "soundfont-player": "^0.12.0",
+    "midi-parser-js": "^4.0.4",
+    "midiconvert": "^0.4.5"
+  }
+}
+
+
