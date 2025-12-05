@@ -525,11 +525,14 @@ async function playStoryMusic(mp3Path) {
     try {
         console.log('Playing MP3:', mp3Path);
         
+        // Clear all fade intervals
         fadeIntervals.forEach(interval => clearInterval(interval));
         fadeIntervals = [];
         
+        // Mark all existing audio as aborted and stop them
         allActiveAudio.forEach(audio => {
-            if (audio && !audio.paused) {
+            if (audio) {
+                audio._aborted = true;
                 audio.pause();
                 audio.currentTime = 0;
                 audio.volume = 0;
@@ -537,22 +540,41 @@ async function playStoryMusic(mp3Path) {
         });
         allActiveAudio = [];
         
+        // Handle crossfade from current audio
         if (currentAudio && !currentAudio.paused) {
             previousAudio = currentAudio;
         } else {
             previousAudio = null;
         }
         
+        // Create new audio and track immediately (before load completes)
         const newAudio = new Audio(mp3Path);
         newAudio.loop = true;
         newAudio.volume = 0;
+        newAudio._aborted = false;
+        allActiveAudio.push(newAudio);  // Track immediately
         
         return new Promise((resolve, reject) => {
             newAudio.addEventListener('canplaythrough', () => {
+                // Check if this audio was aborted while loading
+                if (newAudio._aborted) {
+                    newAudio.pause();
+                    newAudio.currentTime = 0;
+                    resolve();
+                    return;
+                }
+                
                 newAudio.play()
                     .then(() => {
+                        // Double-check abort status after play starts
+                        if (newAudio._aborted) {
+                            newAudio.pause();
+                            newAudio.currentTime = 0;
+                            resolve();
+                            return;
+                        }
+                        
                         currentAudio = newAudio;
-                        allActiveAudio.push(newAudio);
                         
                         if (previousAudio) {
                             crossfade(previousAudio, newAudio);
@@ -717,7 +739,7 @@ function createStoryTrial(story, storyNumber, totalStories, jsPsych) {
                     <div class="story-title">${story.title}</div>
                     <div class="story-text" id="story-text">${sentencesHTML}</div>
                     <div id="instruction-text" style="text-align: center; margin-top: 20px; color: #999; font-size: 14px;">
-                        Press SPACE or → to continue
+                        Press SPACE or → to continue, ← to go back
                     </div>
                     <div style="text-align: center; margin-top: 30px;">
                         <button id="continue-btn" class="jspsych-btn" style="display: none;">
@@ -744,9 +766,18 @@ function createStoryTrial(story, storyNumber, totalStories, jsPsych) {
             
             updateHighlighting(story, clusterKeys, currentClusterIndex, currentPartitionIndex, idOffset, false, null, sentenceToClusterMap, currentPlayingClusterRef);
             
+            // Debounce variables to prevent rapid key presses causing audio overlap
+            let lastKeyTime = 0;
+            const DEBOUNCE_MS = 150;
+            
             const handleKeyPress = function(e) {
                 if ((e.key === 'ArrowRight' || e.key === ' ') && !isComplete) {
                     e.preventDefault();
+                    
+                    // Debounce check - ignore rapid key presses
+                    const now = Date.now();
+                    if (now - lastKeyTime < DEBOUNCE_MS) return;
+                    lastKeyTime = now;
                     
                     if (!inAdditionalPartitions) {
                         const currentCluster = story.midiMapping[clusterKeys[currentClusterIndex]];
@@ -792,6 +823,39 @@ function createStoryTrial(story, storyNumber, totalStories, jsPsych) {
                         
                         updateHighlighting(story, clusterKeys, 0, 0, idOffset, true, additionalPartitions[additionalPartitionIndex], sentenceToClusterMap, currentPlayingClusterRef);
                     }
+                }
+                
+                // Handle backward navigation with left arrow key
+                if (e.key === 'ArrowLeft' && !isComplete) {
+                    e.preventDefault();
+                    
+                    if (inAdditionalPartitions) {
+                        additionalPartitionIndex--;
+                        if (additionalPartitionIndex < 0) {
+                            // Return to last cluster's last partition
+                            inAdditionalPartitions = false;
+                            currentClusterIndex = clusterKeys.length - 1;
+                            currentPartitionIndex = story.midiMapping[clusterKeys[currentClusterIndex]].length - 1;
+                        } else {
+                            // Stay in additional partitions, update highlighting
+                            updateHighlighting(story, clusterKeys, 0, 0, idOffset, true, additionalPartitions[additionalPartitionIndex], sentenceToClusterMap, currentPlayingClusterRef);
+                            return;
+                        }
+                    } else {
+                        currentPartitionIndex--;
+                        if (currentPartitionIndex < 0) {
+                            currentClusterIndex--;
+                            if (currentClusterIndex < 0) {
+                                // At the very beginning - reset to 0
+                                currentClusterIndex = 0;
+                                currentPartitionIndex = 0;
+                                return; // Already at start, don't update
+                            }
+                            currentPartitionIndex = story.midiMapping[clusterKeys[currentClusterIndex]].length - 1;
+                        }
+                    }
+                    
+                    updateHighlighting(story, clusterKeys, currentClusterIndex, currentPartitionIndex, idOffset, false, null, sentenceToClusterMap, currentPlayingClusterRef);
                 }
             };
             
