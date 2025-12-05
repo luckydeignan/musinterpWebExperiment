@@ -5,6 +5,13 @@ midi-utils.js
 start-server.bat
 package.json
 
+# Original experiment files (replaced by cognition-experiment.js)
+experiment.js
+data-loader.js
+config.js
+index.html
+styles.css
+
 # Scripts folder (build tools only)
 scripts/
 
@@ -13,9 +20,11 @@ scripts/
 FluidR3_GM/
 soundfonts/
 
-# Source data (not needed at runtime)
+# Source data (not needed at runtime - embedded in cognition-experiment.js)
 sentence_to_midi/
 raw_texts/
+formatted_stories/
+story_questions/
 
 # GitHub config
 .github/
@@ -23,4 +32,3 @@ raw_texts/
 # Excluded audio files to stay under 100 stimuli limit
 audio/presentation_demo/
 audio/lantern/
-
