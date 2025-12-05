@@ -63,7 +63,7 @@ const CONFIG = {
         showProgressIndicator: true,
         showMusicIndicator: true,
         collectDemographics: false,  // Set to true if you want to add a demographics survey
-        demo: true  // Set to true for demo mode (3 stories with fixed conditions)
+        demo: false  // Set to true for demo mode (3 stories with fixed conditions)
     }
 };
 

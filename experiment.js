@@ -103,6 +103,7 @@ function createTimeline() {
                     <li>Read <strong>${numStories} short narrative stories</strong></li>
                     <li>Listen to <strong>background music</strong> while reading each story</li>
                     <li>Answer <strong>5 comprehension questions</strong> after each story</li>
+                    <li>Answer <strong>4 subjective rating questions</strong> after each story</li>
                 </ul>
                 <p><strong>The entire experiment should take approximately ${estimatedTime}.</strong></p>
             </div>`,
@@ -116,7 +117,8 @@ function createTimeline() {
                 </ul>
                 <p><strong>Answering Questions:</strong></p>
                 <ul>
-                    <li>After each story, you'll answer 5 multiple-choice questions</li>
+                    <li>After each story, you'll answer 5 multiple-choice comprehension questions</li>
+                    <li>You'll also answer 4 subjective rating questions about your experience</li>
                     <li>Select the answer you think is correct</li>
                     <li>Once you submit, you'll move on to the next story</li>
                 </ul>
@@ -125,6 +127,7 @@ function createTimeline() {
                     <li>Background music will play automatically when each story appears</li>
                     <li>You can adjust your device volume if needed</li>
                     <li>The music will stop when you click "Continue"</li>
+                    <li><em>Please do not mute your volume during the experiment, as you will be answering questions about the music at the end of each reading</em></li>
                 </ul>
             </div>`,
             `<div style="max-width: 800px; margin: 0 auto; text-align: center;">
@@ -627,7 +630,7 @@ function createQuestionTrials(story, storyNumber) {
  * Create rating questions for a story
  */
 function createRatingQuestions(story, storyNumber) {
-    const questions = [
+    const likertQuestions = [
         {
             prompt: "How well did the music match the text?",
             name: "music_match",
@@ -654,26 +657,64 @@ function createRatingQuestions(story, storyNumber) {
         }
     ];
     
-    return {
-        type: jsPsychSurveyLikert,
-        preamble: `
-            <div style="max-width: 800px; margin: 0 auto;">
-                <h2 style="text-align: center;">Experience Questions: ${story.title}</h2>
-                <p style="text-align: center; color: #666;">
-                    Please rate your experience with this story on a scale from 1 to 7.
-                </p>
-            </div>
-        `,
-        questions: questions,
-        button_label: 'Continue',
-        randomize_question_order: false,
-        data: {
-            task: 'rating_questions',
-            story_id: story.id,
-            story_title: story.title,
-            story_number: storyNumber,
-            music_condition: story.musicCondition
+    const volumeQuestion = [
+        {
+            prompt: "Did you mute your volume during this reading task?",
+            name: "volume_muted",
+            options: ["Yes", "No"],
+            required: true
         }
+    ];
+    
+    // Return a timeline with both the Likert questions and the volume question
+    return {
+        timeline: [
+            {
+                type: jsPsychSurveyLikert,
+                preamble: `
+                    <div style="max-width: 800px; margin: 0 auto;">
+                        <h2 style="text-align: center;">Experience Questions: ${story.title}</h2>
+                        <p style="text-align: center; color: #666;">
+                            Please rate your experience with this story on a scale from 1 to 7.
+                        </p>
+                    </div>
+                `,
+                questions: likertQuestions,
+                button_label: 'Continue',
+                randomize_question_order: false,
+                data: {
+                    task: 'rating_questions_likert',
+                    story_id: story.id,
+                    story_title: story.title,
+                    story_number: storyNumber,
+                    music_condition: story.musicCondition
+                },
+                on_finish: function(data) {
+                    // Convert zero-indexed responses to 1-indexed
+                    const response = data.response;
+                    Object.keys(response).forEach(key => {
+                        data.response[key] = response[key] + 1;
+                    });
+                }
+            },
+            {
+                type: jsPsychSurveyMultiChoice,
+                preamble: `
+                    <div style="max-width: 800px; margin: 0 auto;">
+                        <h2 style="text-align: center;">Volume Check: ${story.title}</h2>
+                    </div>
+                `,
+                questions: volumeQuestion,
+                button_label: 'Continue',
+                data: {
+                    task: 'rating_questions_volume',
+                    story_id: story.id,
+                    story_title: story.title,
+                    story_number: storyNumber,
+                    music_condition: story.musicCondition
+                }
+            }
+        ]
     };
 }
 
@@ -924,7 +965,8 @@ function displayResults() {
     const questionTrials = data.filter({task: 'comprehension_questions'});
     
     // Get rating trials
-    const ratingTrials = data.filter({task: 'rating_questions'});
+    const ratingTrialsLikert = data.filter({task: 'rating_questions_likert'});
+    const ratingTrialsVolume = data.filter({task: 'rating_questions_volume'});
     
     // Calculate overall statistics
     let totalCorrect = 0;
@@ -942,12 +984,16 @@ function displayResults() {
         };
     });
     
-    // Extract rating results
-    const ratingResults = ratingTrials.values().map(trial => {
+    // Extract rating results by combining Likert and volume responses
+    const ratingResults = ratingTrialsLikert.values().map((likertTrial, index) => {
+        const volumeTrial = ratingTrialsVolume.values()[index];
         return {
-            story: trial.story_title,
-            music_condition: trial.music_condition,
-            ratings: trial.response
+            story: likertTrial.story_title,
+            music_condition: likertTrial.music_condition,
+            ratings: {
+                ...likertTrial.response,
+                volume_muted: volumeTrial ? volumeTrial.response.volume_muted : 'N/A'
+            }
         };
     });
     
@@ -1025,6 +1071,10 @@ function displayResults() {
                         <td style="padding: 8px; color: #666;">How engaged were you with the story?</td>
                         <td style="padding: 8px; text-align: right; font-weight: bold;">${ratings.story_engagement}/7</td>
                     </tr>
+                    <tr>
+                        <td style="padding: 8px; color: #666;">Did you mute your volume during this reading task?</td>
+                        <td style="padding: 8px; text-align: right; font-weight: bold;">${ratings.volume_muted}</td>
+                    </tr>
                 </table>
             </div>
         `;
@@ -1088,9 +1138,8 @@ function downloadDataJSON() {
  * Redirect participant back to Prolific with completion code
  */
 function redirectToProlific() {
-    // Your Prolific completion code will be provided when you create the study
-    // Replace 'YOUR_COMPLETION_CODE' with the actual code from Prolific
-    const completionCode = 'YOUR_COMPLETION_CODE';
+    // Prolific completion code for this study
+    const completionCode = 'C556U7OY';
     
     // Prolific redirect URL format
     const redirectURL = `https://app.prolific.com/submissions/complete?cc=${completionCode}`;
